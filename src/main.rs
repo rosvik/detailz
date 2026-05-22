@@ -8,6 +8,7 @@ use anyhow::Result;
 use chrono::{DateTime, Local};
 use clap::Parser;
 use clio::ClioPath;
+use colored::{ColoredString, Colorize};
 use sha2::{Digest, Sha256};
 
 #[derive(Parser, Debug)]
@@ -29,54 +30,65 @@ fn main() -> Result<()> {
         .file_name()
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_else(|| path.display().to_string());
-    println!("File name:   {}", name);
-    println!("Path:        {}", path.display());
+    println!("{}{}", label("File name:"), name.bold());
+    println!("{}{}", label("Path:"), path.display());
 
     if let Some(m) = &target_meta {
         if m.is_file() {
             if let Ok(Some(t)) = infer::get_from_path(path) {
-                println!("Type:        {} ({})", t.mime_type(), t.extension());
+                println!(
+                    "{}{} ({})",
+                    label("Type:"),
+                    t.mime_type(),
+                    t.extension().dimmed()
+                );
             }
         } else if m.is_dir() {
-            println!("Type:        directory");
+            println!("{}{}", label("Type:"), "directory");
         }
     }
 
     match &target_meta {
-        Some(m) => println!("Size:        {} ({} bytes)", human_size(m.len()), m.len()),
-        None => println!("Size:        (symlink target unreachable)"),
+        Some(m) => println!(
+            "{}{} ({})",
+            label("Size:"),
+            human_size(m.len()),
+            format!("{} bytes", m.len()).dimmed()
+        ),
+        None => println!("{}{}", label("Size:"), "(symlink target unreachable)".dimmed()),
     }
 
     match target_meta.as_ref().filter(|m| m.is_file()) {
-        Some(_) => println!("SHA256:      {}", sha256_file(path)?),
+        Some(_) => println!("{}{}", label("SHA256:"), sha256_file(path)?.dimmed()),
         None if target_meta.as_ref().is_some_and(|m| m.is_dir()) => {
-            println!("SHA256:      (directory)")
+            println!("{}{}", label("SHA256:"), "(directory)".dimmed())
         }
-        None => println!("SHA256:      (not a regular file)"),
+        None => println!("{}{}", label("SHA256:"), "(not a regular file)".dimmed()),
     }
 
     if let Some(m) = &target_meta {
         let mode = m.permissions().mode();
         println!(
-            "Permissions: {} ({:04o})",
+            "{}{} ({})",
+            label("Permissions:"),
             format_mode(mode),
-            mode & 0o7777
+            format!("{:04o}", mode & 0o7777).dimmed()
         );
 
         let uid = m.uid();
         let user = uzers::get_user_by_uid(uid)
             .map(|u| u.name().to_string_lossy().into_owned())
             .unwrap_or_else(|| "?".to_string());
-        println!("Owner:       {} ({})", user, uid);
+        println!("{}{} ({})", label("Owner:"), user, uid.to_string().dimmed());
 
         let gid = m.gid();
         let group = uzers::get_group_by_gid(gid)
             .map(|g| g.name().to_string_lossy().into_owned())
             .unwrap_or_else(|| "?".to_string());
-        println!("Group:       {} ({})", group, gid);
+        println!("{}{} ({})", label("Group:"), group, gid.to_string().dimmed());
 
-        println!("Inode:       {}", m.ino());
-        println!("Hard links:  {}", m.nlink());
+        println!("{}{}", label("Inode:"), m.ino());
+        println!("{}{}", label("Hard links:"), m.nlink());
     }
 
     #[cfg(target_os = "macos")]
@@ -84,43 +96,51 @@ fn main() -> Result<()> {
         use std::os::macos::fs::MetadataExt as MacMetadataExt;
         let flags = m.st_flags();
         if flags != 0 {
-            println!("Flags:       {}", format_bsd_flags(flags));
+            println!("{}{}", label("Flags:"), format_bsd_flags(flags).yellow());
         }
     }
 
     if let Some(m) = &target_meta {
         if let Ok(t) = m.created() {
-            println!("Created:     {}", fmt_time(t));
+            println!("{}{}", label("Created:"), fmt_time(t));
         }
         if let Ok(t) = m.modified() {
-            println!("Modified:    {}", fmt_time(t));
+            println!("{}{}", label("Modified:"), fmt_time(t));
         }
         if let Ok(t) = m.accessed() {
-            println!("Accessed:    {}", fmt_time(t));
+            println!("{}{}", label("Accessed:"), fmt_time(t));
         }
     }
 
     if is_symlink {
         let target = fs::read_link(path)?;
-        println!("Symlink:     -> {}", target.display());
+        println!("{}-> {}", label("Symlink:"), target.display().to_string().cyan());
         if target_meta.is_none() {
-            println!("             (target does not exist)");
+            println!("             {}", "(target does not exist)".red());
         }
     }
 
     let xattrs: Vec<_> = xattr::list(path)?.collect();
     if !xattrs.is_empty() {
-        println!("Extended attributes:");
+        println!("{}", "Extended attributes:".bold().cyan());
         for attr in xattrs {
             let attr_name = attr.to_string_lossy();
             match xattr::get(path, &attr)? {
-                Some(value) => println!("  {} = {}", attr_name, decode_xattr(&attr_name, &value)),
-                None => println!("  {} = (empty)", attr_name),
+                Some(value) => println!(
+                    "  {} = {}",
+                    attr_name.magenta(),
+                    decode_xattr(&attr_name, &value)
+                ),
+                None => println!("  {} = {}", attr_name.magenta(), "(empty)".dimmed()),
             }
         }
     }
 
     Ok(())
+}
+
+fn label(s: &str) -> ColoredString {
+    format!("{:<13}", s).bold().cyan()
 }
 
 fn sha256_file(path: &Path) -> Result<String> {
@@ -157,7 +177,7 @@ fn fmt_time(t: SystemTime) -> String {
 }
 
 fn format_mode(mode: u32) -> String {
-    let mut s = String::with_capacity(9);
+    let mut s = String::with_capacity(9 * 12);
     for (bit, ch) in [
         (0o400, 'r'),
         (0o200, 'w'),
@@ -169,7 +189,17 @@ fn format_mode(mode: u32) -> String {
         (0o002, 'w'),
         (0o001, 'x'),
     ] {
-        s.push(if mode & bit != 0 { ch } else { '-' });
+        let part = if mode & bit != 0 {
+            match ch {
+                'r' => ch.to_string().yellow(),
+                'w' => ch.to_string().red(),
+                'x' => ch.to_string().green(),
+                _ => ch.to_string().normal(),
+            }
+        } else {
+            "-".dimmed()
+        };
+        s.push_str(&part.to_string());
     }
     s
 }
@@ -252,7 +282,11 @@ fn decode_finder_tags(value: &[u8]) -> Option<String> {
     if tags.is_empty() {
         return None;
     }
-    Some(format!("Finder tags: [{}]", tags.join(", ")))
+    Some(format!(
+        "{} [{}]",
+        "Finder tags:".bold(),
+        tags.join(", ")
+    ))
 }
 
 fn decode_quarantine(value: &[u8]) -> Option<String> {
@@ -268,13 +302,14 @@ fn decode_quarantine(value: &[u8]) -> Option<String> {
     let dt: DateTime<Local> =
         DateTime::from_timestamp(timestamp as i64, 0)?.with_timezone(&Local);
     let mut out = format!(
-        "quarantine: flags={} at={} by={}",
+        "{} flags={} at={} by={}",
+        "quarantine:".yellow().bold(),
         flags,
         dt.format("%Y-%m-%d %H:%M:%S %z"),
-        agent
+        agent.yellow()
     );
     if !event.is_empty() {
-        out.push_str(&format!(" event={}", event));
+        out.push_str(&format!(" event={}", event.dimmed()));
     }
     Some(out)
 }
