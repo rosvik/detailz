@@ -31,7 +31,8 @@ fn main() -> Result<()> {
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_else(|| path.display().to_string());
     println!("{}{}", label("File name:"), name.bold());
-    println!("{}{}", label("Path:"), path.display());
+    let abs_path = std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf());
+    println!("{}{}", label("Path:"), abs_path.display());
 
     if let Some(m) = &target_meta {
         if m.is_file() {
