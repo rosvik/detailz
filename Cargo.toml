@@ -1,0 +1,16 @@
+[package]
+name = "detailz"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1"
+chrono = "0.4"
+clap = { version = "4", features = ["derive"] }
+clio = { version = "0.3", features = ["clap-parse"] }
+infer = "0.16"
+libc = "0.2"
+plist = "1"
+sha2 = "0.10"
+uzers = "0.12"
+xattr = "1"
