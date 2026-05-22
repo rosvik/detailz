@@ -113,7 +113,9 @@ fn main() -> Result<()> {
         );
 
         println!("{}{}", label("Inode:"), m.ino());
-        println!("{}{}", label("Hard links:"), m.nlink());
+        if m.nlink() > 1 {
+            println!("{}{}", label("Hard links:"), m.nlink());
+        }
     }
 
     #[cfg(target_os = "macos")]
