@@ -100,17 +100,16 @@ fn main() -> Result<()> {
         let user = uzers::get_user_by_uid(uid)
             .map(|u| u.name().to_string_lossy().into_owned())
             .unwrap_or_else(|| "?".to_string());
-        println!("{}{} ({})", label("Owner:"), user, uid.to_string().dimmed());
-
         let gid = m.gid();
         let group = uzers::get_group_by_gid(gid)
             .map(|g| g.name().to_string_lossy().into_owned())
             .unwrap_or_else(|| "?".to_string());
         println!(
-            "{}{} ({})",
-            label("Group:"),
+            "{}{}:{} ({})",
+            label("Owner:"),
+            user,
             group,
-            gid.to_string().dimmed()
+            format!("{}:{}", uid, gid).dimmed()
         );
 
         println!("{}{}", label("Inode:"), m.ino());
