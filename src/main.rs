@@ -1,15 +1,23 @@
+mod format;
+mod hash;
+#[cfg(target_os = "macos")]
+mod macos;
+mod text;
+mod xattrs;
+
 use std::fs;
-use std::io::Read;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::Path;
-use std::time::SystemTime;
 
 use anyhow::Result;
-use chrono::{DateTime, Local};
 use clap::Parser;
 use clio::ClioPath;
-use colored::{ColoredString, Colorize};
-use sha2::{Digest, Sha256};
+use colored::Colorize;
+
+use crate::format::{fmt_time, format_mode, human_size, label};
+use crate::hash::sha256_file;
+use crate::text::{TextKind, detect_text_kind};
+use crate::xattrs::decode_xattr;
 
 #[derive(Parser, Debug)]
 #[command(name = "detailz", about = "Print detailed information about a file")]
@@ -114,7 +122,11 @@ fn main() -> Result<()> {
         use std::os::macos::fs::MetadataExt as MacMetadataExt;
         let flags = m.st_flags();
         if flags != 0 {
-            println!("{}{}", label("Flags:"), format_bsd_flags(flags).yellow());
+            println!(
+                "{}{}",
+                label("Flags:"),
+                crate::macos::format_bsd_flags(flags).yellow()
+            );
         }
     }
 
@@ -159,243 +171,4 @@ fn main() -> Result<()> {
     }
 
     Ok(())
-}
-
-fn label(s: &str) -> ColoredString {
-    format!("{:<13}", s).bold().cyan()
-}
-
-enum TextKind {
-    Binary,
-    Text(String),
-}
-
-fn detect_bom(bytes: &[u8]) -> Option<&'static str> {
-    // UTF-32 BOMs must be checked before UTF-16: UTF-32LE starts with FF FE 00 00
-    // which shares its first two bytes with UTF-16LE.
-    if bytes.starts_with(b"\x00\x00\xFE\xFF") {
-        Some("UTF-32BE")
-    } else if bytes.starts_with(b"\xFF\xFE\x00\x00") {
-        Some("UTF-32LE")
-    } else if bytes.starts_with(b"\xFE\xFF") {
-        Some("UTF-16BE")
-    } else if bytes.starts_with(b"\xFF\xFE") {
-        Some("UTF-16LE")
-    } else if bytes.starts_with(b"\xEF\xBB\xBF") {
-        Some("UTF-8")
-    } else {
-        None
-    }
-}
-
-fn detect_text_kind(path: &Path) -> std::io::Result<TextKind> {
-    let mut file = fs::File::open(path)?;
-    let mut sample = vec![0u8; 8192];
-    let n = file.read(&mut sample)?;
-    sample.truncate(n);
-
-    if let Some(enc) = detect_bom(&sample) {
-        return Ok(TextKind::Text(enc.to_string()));
-    }
-
-    if sample.contains(&0) {
-        return Ok(TextKind::Binary);
-    }
-
-    let utf8_ok = match std::str::from_utf8(&sample) {
-        Ok(_) => true,
-        Err(e) => e.error_len().is_none() && sample.len() - e.valid_up_to() <= 3,
-    };
-    if utf8_ok {
-        return Ok(TextKind::Text("UTF-8".to_string()));
-    }
-
-    let mut detector = chardetng::EncodingDetector::new();
-    detector.feed(&sample, true);
-    let enc = detector.guess(None, true);
-    Ok(TextKind::Text(enc.name().to_string()))
-}
-
-fn sha256_file(path: &Path) -> Result<String> {
-    let mut file = fs::File::open(path)?;
-    let mut hasher = Sha256::new();
-    let mut buf = vec![0u8; 64 * 1024];
-    loop {
-        let n = file.read(&mut buf)?;
-        if n == 0 {
-            break;
-        }
-        hasher.update(&buf[..n]);
-    }
-    Ok(format!("{:x}", hasher.finalize()))
-}
-
-fn human_size(bytes: u64) -> String {
-    const UNITS: [&str; 7] = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"];
-    if bytes < 1024 {
-        return format!("{} B", bytes);
-    }
-    let mut value = bytes as f64;
-    let mut unit = 0;
-    while value >= 1024.0 && unit < UNITS.len() - 1 {
-        value /= 1024.0;
-        unit += 1;
-    }
-    format!("{:.2} {}", value, UNITS[unit])
-}
-
-fn fmt_time(t: SystemTime) -> String {
-    let dt: DateTime<Local> = t.into();
-    dt.format("%Y-%m-%d %H:%M:%S %z").to_string()
-}
-
-fn format_mode(mode: u32) -> String {
-    let mut s = String::with_capacity(9 * 12);
-    for (bit, ch) in [
-        (0o400, 'r'),
-        (0o200, 'w'),
-        (0o100, 'x'),
-        (0o040, 'r'),
-        (0o020, 'w'),
-        (0o010, 'x'),
-        (0o004, 'r'),
-        (0o002, 'w'),
-        (0o001, 'x'),
-    ] {
-        let part = if mode & bit != 0 {
-            match ch {
-                'r' => ch.to_string().yellow(),
-                'w' => ch.to_string().red(),
-                'x' => ch.to_string().green(),
-                _ => ch.to_string().normal(),
-            }
-        } else {
-            "-".dimmed()
-        };
-        s.push_str(&part.to_string());
-    }
-    s
-}
-
-#[cfg(target_os = "macos")]
-fn format_bsd_flags(flags: u32) -> String {
-    let mapping: &[(u32, &str)] = &[
-        (libc::UF_NODUMP, "nodump"),
-        (libc::UF_IMMUTABLE, "uchg"),
-        (libc::UF_APPEND, "uappnd"),
-        (libc::UF_OPAQUE, "opaque"),
-        (libc::UF_COMPRESSED, "compressed"),
-        (libc::UF_TRACKED, "tracked"),
-        (0x0000_0080, "datavault"),
-        (libc::UF_HIDDEN, "hidden"),
-        (libc::SF_ARCHIVED, "arch"),
-        (libc::SF_IMMUTABLE, "schg"),
-        (libc::SF_APPEND, "sappnd"),
-        (0x0008_0000, "restricted"),
-        (0x0010_0000, "sunlnk"),
-    ];
-    let known: u32 = mapping.iter().map(|(b, _)| b).fold(0, |a, b| a | b);
-    let mut parts: Vec<&str> = mapping
-        .iter()
-        .filter(|(bit, _)| flags & bit != 0)
-        .map(|(_, name)| *name)
-        .collect();
-    let unknown = flags & !known;
-    let mut s = parts.join(", ");
-    if unknown != 0 {
-        if !parts.is_empty() {
-            s.push_str(", ");
-        }
-        s.push_str(&format!("unknown(0x{:x})", unknown));
-        parts.push("");
-    }
-    if s.is_empty() {
-        format!("0x{:x}", flags)
-    } else {
-        s
-    }
-}
-
-fn decode_xattr(name: &str, value: &[u8]) -> String {
-    match name {
-        "com.apple.metadata:_kMDItemUserTags" => {
-            decode_finder_tags(value).unwrap_or_else(|| display_xattr_value(value))
-        }
-        "com.apple.quarantine" => {
-            decode_quarantine(value).unwrap_or_else(|| display_xattr_value(value))
-        }
-        _ => display_xattr_value(value),
-    }
-}
-
-fn decode_finder_tags(value: &[u8]) -> Option<String> {
-    let parsed: plist::Value = plist::from_bytes(value).ok()?;
-    let arr = parsed.as_array()?;
-    let tags: Vec<String> = arr
-        .iter()
-        .filter_map(|v| v.as_string())
-        .map(|s| {
-            let (name, color) = s.split_once('\n').unwrap_or((s, ""));
-            let color_name = match color {
-                "1" => Some("gray"),
-                "2" => Some("green"),
-                "3" => Some("purple"),
-                "4" => Some("blue"),
-                "5" => Some("yellow"),
-                "6" => Some("red"),
-                "7" => Some("orange"),
-                _ => None,
-            };
-            match color_name {
-                Some(c) => format!("{} ({})", name, c),
-                None => name.to_string(),
-            }
-        })
-        .collect();
-    if tags.is_empty() {
-        return None;
-    }
-    Some(format!("{} [{}]", "Finder tags:".bold(), tags.join(", ")))
-}
-
-fn decode_quarantine(value: &[u8]) -> Option<String> {
-    let s = std::str::from_utf8(value).ok()?;
-    let parts: Vec<&str> = s.split(';').collect();
-    if parts.len() < 3 {
-        return None;
-    }
-    let flags = parts[0];
-    let timestamp = u64::from_str_radix(parts[1], 16).ok()?;
-    let agent = parts[2];
-    let event = parts.get(3).copied().unwrap_or("");
-    let dt: DateTime<Local> = DateTime::from_timestamp(timestamp as i64, 0)?.with_timezone(&Local);
-    let mut out = format!(
-        "{} flags={} at={} by={}",
-        "quarantine:".yellow().bold(),
-        flags,
-        dt.format("%Y-%m-%d %H:%M:%S %z"),
-        agent.yellow()
-    );
-    if !event.is_empty() {
-        out.push_str(&format!(" event={}", event.dimmed()));
-    }
-    Some(out)
-}
-
-fn display_xattr_value(v: &[u8]) -> String {
-    let printable = std::str::from_utf8(v).ok().filter(|s| {
-        s.chars()
-            .all(|c| !c.is_control() || c == '\n' || c == '\t' || c == '\r')
-    });
-    match printable {
-        Some(s) => format!("{} ({} bytes)", s, v.len()),
-        None => {
-            let preview: String = v.iter().take(32).map(|b| format!("{:02x}", b)).collect();
-            if v.len() > 32 {
-                format!("0x{}... ({} bytes)", preview, v.len())
-            } else {
-                format!("0x{} ({} bytes)", preview, v.len())
-            }
-        }
-    }
 }
