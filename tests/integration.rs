@@ -65,30 +65,15 @@ fn utf16_without_bom_classified_as_binary() {
 
 #[test]
 fn utf16_with_bom_detected_as_text() {
-    let tmp = tempfile::tempdir().unwrap();
-    let path = tmp.path().join("utf16-bom.txt");
-    let mut bytes = vec![0xFF, 0xFE]; // UTF-16LE BOM
-    bytes.extend(
-        "Hello, world!\n"
-            .encode_utf16()
-            .flat_map(|u| u.to_le_bytes()),
-    );
-    fs::write(&path, &bytes).unwrap();
-
-    let out = run(&path);
+    let out = run(&fixture("utf16le-bom.txt"));
     assert!(out.contains("Type:        text"), "{out}");
     assert!(out.contains("Encoding:    UTF-16LE"), "{out}");
 }
 
 #[test]
 fn utf32_be_with_bom_detected_as_text() {
-    let tmp = tempfile::tempdir().unwrap();
-    let path = tmp.path().join("utf32be-bom.txt");
     // Without a BOM check, UTF-32BE's leading 00 00 FE FF would flag NUL → binary.
-    let bytes: Vec<u8> = b"\x00\x00\xFE\xFF\x00\x00\x00H\x00\x00\x00i".to_vec();
-    fs::write(&path, &bytes).unwrap();
-
-    let out = run(&path);
+    let out = run(&fixture("utf32be-bom.txt"));
     assert!(out.contains("Type:        text"), "{out}");
     assert!(out.contains("Encoding:    UTF-32BE"), "{out}");
 }
@@ -127,35 +112,21 @@ fn permissions_and_owner_lines_present() {
 
 #[test]
 fn human_size_scales_to_kib() {
-    let tmp = tempfile::tempdir().unwrap();
-    let path = tmp.path().join("two-kib.bin");
-    fs::write(&path, vec![b'a'; 2048]).unwrap();
-    let out = run(&path);
+    let out = run(&fixture("two-kib.bin"));
     assert!(out.contains("Size:        2.00 KiB (2048 bytes)"), "{out}");
 }
 
 #[test]
 fn symlink_shows_target() {
-    let tmp = tempfile::tempdir().unwrap();
-    let target = tmp.path().join("target.txt");
-    fs::write(&target, "hi").unwrap();
-    let link = tmp.path().join("link.txt");
-    std::os::unix::fs::symlink(&target, &link).unwrap();
-
-    let out = run(&link);
-    assert!(out.contains("Symlink:     -> "), "{out}");
-    assert!(out.contains("target.txt"), "{out}");
+    let out = run(&fixture("working-link.txt"));
+    assert!(out.contains("Symlink:     -> link-target.txt"), "{out}");
     assert!(!out.contains("(target does not exist)"), "{out}");
 }
 
 #[test]
 fn broken_symlink_marks_target_missing() {
-    let tmp = tempfile::tempdir().unwrap();
-    let link = tmp.path().join("broken");
-    std::os::unix::fs::symlink("/this/path/does/not/exist", &link).unwrap();
-
-    let out = run(&link);
-    assert!(out.contains("Symlink:     -> /this/path/does/not/exist"), "{out}");
+    let out = run(&fixture("broken-link.txt"));
+    assert!(out.contains("Symlink:     -> nonexistent-target"), "{out}");
     assert!(out.contains("(target does not exist)"), "{out}");
     assert!(out.contains("(symlink target unreachable)"), "{out}");
 }
