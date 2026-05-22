@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use assert_cmd::Command;
@@ -136,7 +135,7 @@ fn broken_symlink_marks_target_missing() {
 fn plain_xattr_is_listed() {
     let tmp = tempfile::tempdir().unwrap();
     let path = tmp.path().join("with-xattr.txt");
-    fs::write(&path, "hi").unwrap();
+    std::fs::write(&path, "hi").unwrap();
     xattr::set(&path, "com.example.test", b"hello world").unwrap();
 
     let out = run(&path);
@@ -150,7 +149,7 @@ fn plain_xattr_is_listed() {
 fn quarantine_xattr_is_decoded() {
     let tmp = tempfile::tempdir().unwrap();
     let path = tmp.path().join("quarantined.txt");
-    fs::write(&path, "hi").unwrap();
+    std::fs::write(&path, "hi").unwrap();
     xattr::set(
         &path,
         "com.apple.quarantine",
@@ -170,7 +169,7 @@ fn quarantine_xattr_is_decoded() {
 fn finder_tags_xattr_is_decoded() {
     let tmp = tempfile::tempdir().unwrap();
     let path = tmp.path().join("tagged.txt");
-    fs::write(&path, "hi").unwrap();
+    std::fs::write(&path, "hi").unwrap();
     let tags = vec!["Important\n6".to_string(), "Work".to_string()];
     let mut plist_bytes = Vec::new();
     plist::to_writer_binary(&mut plist_bytes, &tags).unwrap();
@@ -187,7 +186,7 @@ fn finder_tags_xattr_is_decoded() {
 fn hidden_flag_is_reported() {
     let tmp = tempfile::tempdir().unwrap();
     let path = tmp.path().join("hidden.txt");
-    fs::write(&path, "hi").unwrap();
+    std::fs::write(&path, "hi").unwrap();
     let status = std::process::Command::new("chflags")
         .arg("hidden")
         .arg(&path)
