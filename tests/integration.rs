@@ -57,10 +57,40 @@ fn latin1_detected_as_windows_1252() {
 }
 
 #[test]
-fn utf16_classified_as_binary_because_of_nul_bytes() {
+fn utf16_without_bom_classified_as_binary() {
     let out = run(&fixture("utf16.txt"));
     assert!(out.contains("Type:        binary"), "{out}");
     assert!(!out.contains("Encoding:"), "{out}");
+}
+
+#[test]
+fn utf16_with_bom_detected_as_text() {
+    let tmp = tempfile::tempdir().unwrap();
+    let path = tmp.path().join("utf16-bom.txt");
+    let mut bytes = vec![0xFF, 0xFE]; // UTF-16LE BOM
+    bytes.extend(
+        "Hello, world!\n"
+            .encode_utf16()
+            .flat_map(|u| u.to_le_bytes()),
+    );
+    fs::write(&path, &bytes).unwrap();
+
+    let out = run(&path);
+    assert!(out.contains("Type:        text"), "{out}");
+    assert!(out.contains("Encoding:    UTF-16LE"), "{out}");
+}
+
+#[test]
+fn utf32_be_with_bom_detected_as_text() {
+    let tmp = tempfile::tempdir().unwrap();
+    let path = tmp.path().join("utf32be-bom.txt");
+    // Without a BOM check, UTF-32BE's leading 00 00 FE FF would flag NUL → binary.
+    let bytes: Vec<u8> = b"\x00\x00\xFE\xFF\x00\x00\x00H\x00\x00\x00i".to_vec();
+    fs::write(&path, &bytes).unwrap();
+
+    let out = run(&path);
+    assert!(out.contains("Type:        text"), "{out}");
+    assert!(out.contains("Encoding:    UTF-32BE"), "{out}");
 }
 
 #[test]
