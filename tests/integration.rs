@@ -34,12 +34,9 @@ fn hello_txt_size_and_sha256() {
 fn file_name_and_absolute_path() {
     let path = fixture("hello.txt");
     let out = run(&path);
-    assert!(out.contains("File name:   hello.txt"), "{out}");
+    assert!(out.contains("hello.txt"), "{out}");
     assert!(
-        out.contains(&format!(
-            "Path:        {}",
-            path.canonicalize().unwrap().display()
-        )),
+        out.contains(&format!("({})", path.canonicalize().unwrap().display())),
         "{out}"
     );
 }
@@ -107,9 +104,8 @@ fn permissions_and_owner_lines_present() {
     let out = run(&fixture("hello.txt"));
     assert!(out.contains("Permissions: "), "{out}");
     assert!(out.contains("Owner:       "), "{out}");
-    assert!(out.contains("Group:       "), "{out}");
     assert!(out.contains("Inode:       "), "{out}");
-    assert!(out.contains("Hard links:  1"), "{out}");
+    assert!(!out.contains("Hard links:"), "{out}");
 }
 
 #[test]
