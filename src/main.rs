@@ -88,14 +88,6 @@ fn main() -> Result<()> {
         ),
     }
 
-    match target_meta.as_ref().filter(|m| m.is_file()) {
-        Some(_) => println!("{}{}", label("SHA256:"), sha256_file(path)?.dimmed()),
-        None if target_meta.as_ref().is_some_and(|m| m.is_dir()) => {
-            println!("{}{}", label("SHA256:"), "(directory)".dimmed())
-        }
-        None => println!("{}{}", label("SHA256:"), "(not a regular file)".dimmed()),
-    }
-
     if let Some(m) = &target_meta {
         let mode = m.permissions().mode();
         println!(
@@ -162,6 +154,10 @@ fn main() -> Result<()> {
         if target_meta.is_none() {
             println!("             {}", "(target does not exist)".red());
         }
+    }
+
+    if target_meta.as_ref().filter(|m| m.is_file()).is_some() {
+        println!("{}{}", label("SHA256:"), sha256_file(path)?.dimmed());
     }
 
     let xattrs: Vec<_> = xattr::list(path)?.collect();
