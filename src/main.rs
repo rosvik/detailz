@@ -20,7 +20,7 @@ struct Args {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let path: &Path = args.file.path().as_ref();
+    let path: &Path = args.file.path();
 
     let symlink_meta = fs::symlink_metadata(path)?;
     let is_symlink = symlink_meta.file_type().is_symlink();
@@ -44,7 +44,7 @@ fn main() -> Result<()> {
                 );
             }
         } else if m.is_dir() {
-            println!("{}{}", label("Type:"), "directory");
+            println!("{}directory", label("Type:"));
         }
     }
 
@@ -55,7 +55,11 @@ fn main() -> Result<()> {
             human_size(m.len()),
             format!("{} bytes", m.len()).dimmed()
         ),
-        None => println!("{}{}", label("Size:"), "(symlink target unreachable)".dimmed()),
+        None => println!(
+            "{}{}",
+            label("Size:"),
+            "(symlink target unreachable)".dimmed()
+        ),
     }
 
     match target_meta.as_ref().filter(|m| m.is_file()) {
@@ -85,7 +89,12 @@ fn main() -> Result<()> {
         let group = uzers::get_group_by_gid(gid)
             .map(|g| g.name().to_string_lossy().into_owned())
             .unwrap_or_else(|| "?".to_string());
-        println!("{}{} ({})", label("Group:"), group, gid.to_string().dimmed());
+        println!(
+            "{}{} ({})",
+            label("Group:"),
+            group,
+            gid.to_string().dimmed()
+        );
 
         println!("{}{}", label("Inode:"), m.ino());
         println!("{}{}", label("Hard links:"), m.nlink());
@@ -114,7 +123,11 @@ fn main() -> Result<()> {
 
     if is_symlink {
         let target = fs::read_link(path)?;
-        println!("{}-> {}", label("Symlink:"), target.display().to_string().cyan());
+        println!(
+            "{}-> {}",
+            label("Symlink:"),
+            target.display().to_string().cyan()
+        );
         if target_meta.is_none() {
             println!("             {}", "(target does not exist)".red());
         }
@@ -282,11 +295,7 @@ fn decode_finder_tags(value: &[u8]) -> Option<String> {
     if tags.is_empty() {
         return None;
     }
-    Some(format!(
-        "{} [{}]",
-        "Finder tags:".bold(),
-        tags.join(", ")
-    ))
+    Some(format!("{} [{}]", "Finder tags:".bold(), tags.join(", ")))
 }
 
 fn decode_quarantine(value: &[u8]) -> Option<String> {
@@ -299,8 +308,7 @@ fn decode_quarantine(value: &[u8]) -> Option<String> {
     let timestamp = u64::from_str_radix(parts[1], 16).ok()?;
     let agent = parts[2];
     let event = parts.get(3).copied().unwrap_or("");
-    let dt: DateTime<Local> =
-        DateTime::from_timestamp(timestamp as i64, 0)?.with_timezone(&Local);
+    let dt: DateTime<Local> = DateTime::from_timestamp(timestamp as i64, 0)?.with_timezone(&Local);
     let mut out = format!(
         "{} flags={} at={} by={}",
         "quarantine:".yellow().bold(),
