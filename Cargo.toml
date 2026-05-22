@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1"
+chardetng = "0.1"
 chrono = "0.4"
 clap = { version = "4", features = ["derive"] }
 colored = "2"

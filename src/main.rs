@@ -43,6 +43,14 @@ fn main() -> Result<()> {
                     t.mime_type(),
                     t.extension().dimmed()
                 );
+            } else if let Ok(kind) = detect_text_kind(path) {
+                match kind {
+                    TextKind::Binary => println!("{}{}", label("Type:"), "binary".yellow()),
+                    TextKind::Text(enc) => {
+                        println!("{}{}", label("Type:"), "text".green());
+                        println!("{}{}", label("Encoding:"), enc);
+                    }
+                }
             }
         } else if m.is_dir() {
             println!("{}directory", label("Type:"));
@@ -155,6 +163,35 @@ fn main() -> Result<()> {
 
 fn label(s: &str) -> ColoredString {
     format!("{:<13}", s).bold().cyan()
+}
+
+enum TextKind {
+    Binary,
+    Text(String),
+}
+
+fn detect_text_kind(path: &Path) -> std::io::Result<TextKind> {
+    let mut file = fs::File::open(path)?;
+    let mut sample = vec![0u8; 8192];
+    let n = file.read(&mut sample)?;
+    sample.truncate(n);
+
+    if sample.contains(&0) {
+        return Ok(TextKind::Binary);
+    }
+
+    let utf8_ok = match std::str::from_utf8(&sample) {
+        Ok(_) => true,
+        Err(e) => e.error_len().is_none() && sample.len() - e.valid_up_to() <= 3,
+    };
+    if utf8_ok {
+        return Ok(TextKind::Text("UTF-8".to_string()));
+    }
+
+    let mut detector = chardetng::EncodingDetector::new();
+    detector.feed(&sample, true);
+    let enc = detector.guess(None, true);
+    Ok(TextKind::Text(enc.name().to_string()))
 }
 
 fn sha256_file(path: &Path) -> Result<String> {
