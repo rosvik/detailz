@@ -62,7 +62,7 @@ fn main() -> Result<()> {
                 );
             } else if let Ok(kind) = detect_text_kind(path) {
                 match kind {
-                    TextKind::Binary => println!("{}{}", label("Type:"), "binary".yellow()),
+                    TextKind::Binary => println!("{}{}", label("Type:"), "binary".red()),
                     TextKind::Text(enc) => {
                         println!("{}{}", label("Type:"), "text".green());
                         println!("{}{}", label("Encoding:"), enc);
@@ -70,16 +70,16 @@ fn main() -> Result<()> {
                 }
             }
         } else if m.is_dir() {
-            println!("{}directory", label("Type:"));
+            println!("{}{}", label("Type:"), "directory".blue());
         }
     }
 
     match &target_meta {
         Some(m) => println!(
-            "{}{} ({})",
+            "{}{} {}",
             label("Size:"),
             human_size(m.len()),
-            format!("{} bytes", m.len()).dimmed()
+            format!("({} bytes)", m.len()).dimmed()
         ),
         None => println!(
             "{}{}",
@@ -91,10 +91,10 @@ fn main() -> Result<()> {
     if let Some(m) = &target_meta {
         let mode = m.permissions().mode();
         println!(
-            "{}{} ({})",
+            "{}{} {}",
             label("Permissions:"),
             format_mode(mode),
-            format!("{:04o}", mode & 0o7777).dimmed()
+            format!("({:04o})", mode & 0o7777).dimmed()
         );
 
         let uid = m.uid();
@@ -106,11 +106,11 @@ fn main() -> Result<()> {
             .map(|g| g.name().to_string_lossy().into_owned())
             .unwrap_or_else(|| "?".to_string());
         println!(
-            "{}{}:{} ({})",
+            "{}{}:{} {}",
             label("Owner:"),
             user,
             group,
-            format!("{}:{}", uid, gid).dimmed()
+            format!("({}:{})", uid, gid).dimmed()
         );
 
         println!("{}{}", label("Inode:"), m.ino());
