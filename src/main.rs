@@ -38,9 +38,18 @@ fn main() -> Result<()> {
         .file_name()
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_else(|| path.display().to_string());
-    println!("{}{}", label("File name:"), name.bold());
     let abs_path = std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf());
-    println!("{}{}", label("Path:"), abs_path.display());
+    println!(
+        "{} {}{}{}",
+        name.bold().green(),
+        "(".dimmed(),
+        abs_path.display().to_string().dimmed(),
+        ")".dimmed()
+    );
+    println!(
+        "{}",
+        "─".repeat(name.len() + abs_path.display().to_string().len() + 3)
+    );
 
     if let Some(m) = &target_meta {
         if m.is_file() {
