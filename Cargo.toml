@@ -16,3 +16,7 @@ plist = "1"
 sha2 = "0.10"
 uzers = "0.12"
 xattr = "1"
+
+[dev-dependencies]
+assert_cmd = "2"
+tempfile = "3"
