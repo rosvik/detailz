@@ -36,7 +36,10 @@ fn file_name_and_absolute_path() {
     let out = run(&path);
     assert!(out.contains("File name:   hello.txt"), "{out}");
     assert!(
-        out.contains(&format!("Path:        {}", path.canonicalize().unwrap().display())),
+        out.contains(&format!(
+            "Path:        {}",
+            path.canonicalize().unwrap().display()
+        )),
         "{out}"
     );
 }
@@ -161,7 +164,10 @@ fn quarantine_xattr_is_decoded() {
     assert!(out.contains("quarantine:"), "{out}");
     assert!(out.contains("Safari"), "{out}");
     assert!(out.contains("flags=0083"), "{out}");
-    assert!(out.contains("F8E9B7C8-1234-5678-9ABC-DEF012345678"), "{out}");
+    assert!(
+        out.contains("F8E9B7C8-1234-5678-9ABC-DEF012345678"),
+        "{out}"
+    );
 }
 
 #[cfg(target_os = "macos")]
