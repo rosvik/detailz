@@ -21,10 +21,19 @@ use crate::text::{TextKind, detect_text_kind};
 use crate::xattrs::decode_xattr;
 
 #[derive(Parser, Debug)]
-#[command(name = "detailz", about = "Print detailed information about a file")]
+#[command(
+    name = "detailz",
+    version,
+    about = "Print detailed information about a file",
+    disable_version_flag = true
+)]
 struct Args {
     /// File to inspect
     file: ClioPath,
+
+    /// Print version
+    #[arg(short = 'v', long, action = clap::ArgAction::Version)]
+    version: Option<bool>,
 }
 
 fn main() -> Result<()> {
