@@ -15,6 +15,7 @@ A small Rust CLI that prints detailed information about a file.
 - Extended attributes
 - macOS BSD file flags (`hidden`, `uchg`, `schg`, …)
 - SHA256 hash
+- EXIF metadata for images via [`kamadak-exif`](https://crates.io/crates/kamadak-exif) (JPEG, TIFF, HEIF, PNG, WebP)
 
 ## Build
 
