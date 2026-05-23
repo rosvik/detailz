@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/rosvik/dtls/compare/v0.1.0...v0.2.0) (2026-05-23)
+
+
+### Features
+
+* add `-v` and `--version` flags ([524b960](https://github.com/rosvik/dtls/commit/524b960ab366f44de8395fa8e777c1ca1d3ffb96))
+* print EXIF metadata ([0b16a78](https://github.com/rosvik/dtls/commit/0b16a780c177451dda721b820a52299f4f6efd59))
+
 ## 0.1.0 (2026-05-23)
 
 
