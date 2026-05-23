@@ -23,6 +23,8 @@ SHA256:      659011f7cc1a10a40c9064d29144d956a4c9ceda4220443297d997af2e3ca532
 
 ## Installation
 
+Download a binary from [releases](https://github.com/rosvik/dtls/releases), or build and install with Cargo:
+
 ```sh
 cargo install --git https://github.com/rosvik/dtls
 ```
