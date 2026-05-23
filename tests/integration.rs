@@ -9,7 +9,7 @@ fn fixture(name: &str) -> PathBuf {
 }
 
 fn run(path: &Path) -> String {
-    let output = Command::cargo_bin("detailz")
+    let output = Command::cargo_bin("dtls")
         .unwrap()
         .arg(path)
         .assert()

@@ -1,7 +1,7 @@
 > [!NOTE]
 > This project is very much vibe coded.
 
-# detailz
+# dtls
 
 A small Rust CLI that prints detailed information about a file.
 
@@ -22,19 +22,19 @@ A small Rust CLI that prints detailed information about a file.
 cargo build --release
 ```
 
-Binary is at `target/release/detailz`.
+Binary is at `target/release/dtls`.
 
 ## Usage
 
 ```sh
-detailz <FILE>
+dtls <FILE>
 ```
 
 Example:
 
 ```
-$ detailz Cargo.toml
-Cargo.toml (/Users/you/detailz/Cargo.toml)
+$ dtls Cargo.toml
+Cargo.toml (/Users/you/dtls/Cargo.toml)
 ─────────────────────────────────────────
 Type:        text
 Encoding:    UTF-8

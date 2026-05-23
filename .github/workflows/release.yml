@@ -45,12 +45,12 @@ jobs:
       - run: cargo build --release --locked --target ${{ matrix.target }}
       - name: Package
         run: |
-          tar czf detailz-${{ needs.release-please.outputs.tag_name }}-${{ matrix.target }}.tar.gz \
-            -C target/${{ matrix.target }}/release detailz
+          tar czf dtls-${{ needs.release-please.outputs.tag_name }}-${{ matrix.target }}.tar.gz \
+            -C target/${{ matrix.target }}/release dtls
       - name: Upload to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload ${{ needs.release-please.outputs.tag_name }} \
-            detailz-${{ needs.release-please.outputs.tag_name }}-${{ matrix.target }}.tar.gz \
+            dtls-${{ needs.release-please.outputs.tag_name }}-${{ matrix.target }}.tar.gz \
             --repo ${{ github.repository }}
