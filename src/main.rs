@@ -1,3 +1,4 @@
+mod exif;
 mod format;
 mod hash;
 #[cfg(target_os = "macos")]
@@ -176,5 +177,25 @@ fn main() -> Result<()> {
         }
     }
 
+    if let Some(fields) = exif::read_exif(path) {
+        println!("{}", "EXIF:".bold().cyan());
+        for field in fields {
+            println!(
+                "  {} = {}",
+                field.tag.magenta(),
+                truncate(&field.value, 120)
+            );
+        }
+    }
+
     Ok(())
+}
+
+fn truncate(s: &str, max_chars: usize) -> String {
+    if s.chars().count() <= max_chars {
+        return s.to_string();
+    }
+    let mut out: String = s.chars().take(max_chars).collect();
+    out.push('…');
+    out
 }
