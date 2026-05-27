@@ -1,5 +1,5 @@
-mod exif;
 mod dates;
+mod exif;
 mod format;
 mod hash;
 #[cfg(target_os = "macos")]
@@ -26,7 +26,7 @@ use crate::xattrs::decode_xattr;
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "detailz",
+    name = "dtls",
     version,
     about = "Print detailed information about a file",
     disable_version_flag = true
