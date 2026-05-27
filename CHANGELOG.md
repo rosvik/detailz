@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/rosvik/dtls/compare/v0.3.1...v0.4.0) (2026-05-27)
+
+
+### Features
+
+* based on width, print dates on one or three lines ([da70223](https://github.com/rosvik/dtls/commit/da7022322b136723d1ecd0b87e42fb228f12b2ed))
+
 ## [0.3.1](https://github.com/rosvik/dtls/compare/v0.3.0...v0.3.1) (2026-05-27)
 
 
