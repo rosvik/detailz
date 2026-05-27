@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/rosvik/dtls/compare/v0.3.0...v0.3.1) (2026-05-27)
+
+
+### Bug Fixes
+
+* update tool name in help info ([afade41](https://github.com/rosvik/dtls/commit/afade41eb69f8ae68016f18c213a506f61abfd41))
+
 ## [0.3.0](https://github.com/rosvik/dtls/compare/v0.2.0...v0.3.0) (2026-05-27)
 
 
