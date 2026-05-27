@@ -6,19 +6,21 @@
 A small Rust CLI that prints detailed information about a file. (Pronounciation: `details`)
 
 ```
-$ dtls Cargo.toml
-Cargo.toml (/Users/you/dtls/Cargo.toml)
+$ dtls photo.jpg
+photo.jpg (/Users/you/photos/photo.jpg)
 ─────────────────────────────────────────
-Type:        text
-Encoding:    UTF-8
+Type:        image/jpeg (jpg)
 Size:        373 B (373 bytes)
 Permissions: rw-r--r-- (0644)
 Owner:       you:staff (501:20)
 Inode:       102176003
-Created:     2026-05-22 23:30:24 +0200
-Modified:    2026-05-22 23:30:24 +0200
-Accessed:    2026-05-22 23:30:25 +0200
+Created:     2026-05-22 23:30:24 +0200 / Modified: 2026-05-22 23:30:24 +0200 / Accessed: 2026-05-22 23:30:25 +0200
 SHA256:      659011f7cc1a10a40c9064d29144d956a4c9ceda4220443297d997af2e3ca532
+EXIF:
+  ExposureTime = 1/250 s
+  FNumber = f/2.8
+  PhotographicSensitivity = 400
+  FocalLength = 50 mm
 ```
 
 ## Installation
