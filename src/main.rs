@@ -1,4 +1,5 @@
 mod exif;
+mod dates;
 mod format;
 mod hash;
 #[cfg(target_os = "macos")]
@@ -16,7 +17,8 @@ use clap::Parser;
 use clio::ClioPath;
 use colored::Colorize;
 
-use crate::format::{fmt_time, format_mode, human_size, label};
+use crate::dates::print_dates;
+use crate::format::{format_mode, human_size, label};
 use crate::hash::sha256_file;
 use crate::terminal::terminal_size;
 use crate::text::{TextKind, detect_text_kind};
@@ -145,15 +147,7 @@ fn main() -> Result<()> {
     }
 
     if let Some(m) = &target_meta {
-        if let Ok(t) = m.created() {
-            println!("{}{}", label("Created:"), fmt_time(t));
-        }
-        if let Ok(t) = m.modified() {
-            println!("{}{}", label("Modified:"), fmt_time(t));
-        }
-        if let Ok(t) = m.accessed() {
-            println!("{}{}", label("Accessed:"), fmt_time(t));
-        }
+        print_dates(m);
     }
 
     if is_symlink {
