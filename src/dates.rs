@@ -1,25 +1,17 @@
 use std::fs::Metadata;
 
-use colored::Colorize;
+use crate::format::{fmt_time, print_label_value_pairs};
 
-use crate::format::{fmt_time, label};
-
-pub fn print_dates(metadata: &Metadata) {
-    let inline_label = |s: &str| format!("{} {}", "/".dimmed(), s.cyan().bold());
-
-    let mut parts = Vec::new();
-    match metadata.created() {
-        Ok(t) => parts.push(format!("{}{}", label("Created:"), fmt_time(t))),
-        Err(_) => return,
+pub fn print_dates(metadata: &Metadata, terminal_width: usize) {
+    let mut pairs: Vec<(&str, String)> = Vec::new();
+    if let Ok(t) = metadata.created() {
+        pairs.push(("Created:", fmt_time(t)));
     }
     if let Ok(t) = metadata.modified() {
-        parts.push(format!("{} {}", inline_label("Modified:"), fmt_time(t)));
+        pairs.push(("Modified:", fmt_time(t)));
     }
     if let Ok(t) = metadata.accessed() {
-        parts.push(format!("{} {}", inline_label("Accessed:"), fmt_time(t)));
+        pairs.push(("Accessed:", fmt_time(t)));
     }
-
-    if !parts.is_empty() {
-        println!("{}", parts.join(" "));
-    }
+    print_label_value_pairs(&pairs, terminal_width);
 }

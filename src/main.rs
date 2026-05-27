@@ -147,7 +147,7 @@ fn main() -> Result<()> {
     }
 
     if let Some(m) = &target_meta {
-        print_dates(m);
+        print_dates(m, terminal_size.width);
     }
 
     if is_symlink {
