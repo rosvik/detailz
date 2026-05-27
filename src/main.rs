@@ -3,6 +3,7 @@ mod format;
 mod hash;
 #[cfg(target_os = "macos")]
 mod macos;
+mod terminal;
 mod text;
 mod xattrs;
 
@@ -17,6 +18,7 @@ use colored::Colorize;
 
 use crate::format::{fmt_time, format_mode, human_size, label};
 use crate::hash::sha256_file;
+use crate::terminal::terminal_size;
 use crate::text::{TextKind, detect_text_kind};
 use crate::xattrs::decode_xattr;
 
@@ -43,6 +45,7 @@ fn main() -> Result<()> {
     let symlink_meta = fs::symlink_metadata(path)?;
     let is_symlink = symlink_meta.file_type().is_symlink();
     let target_meta = fs::metadata(path).ok();
+    let terminal_size = terminal_size();
 
     let name = path
         .file_name()
@@ -56,10 +59,9 @@ fn main() -> Result<()> {
         abs_path.display().to_string().dimmed(),
         ")".dimmed()
     );
-    println!(
-        "{}",
-        "─".repeat(name.len() + abs_path.display().to_string().len() + 3)
-    );
+    let separator_len = name.len() + abs_path.display().to_string().len() + 3;
+    let separator_len = terminal_size.width.min(separator_len);
+    println!("{}", "─".repeat(separator_len));
 
     if let Some(m) = &target_meta {
         if m.is_file() {
