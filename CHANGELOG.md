@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/rosvik/dtls/compare/v0.2.0...v0.3.0) (2026-05-27)
+
+
+### Features
+
+* inline modified and access dates ([a55c70d](https://github.com/rosvik/dtls/commit/a55c70d0a49745a8404e607e516be377f86ba25f))
+* limit separator width to terminal width ([3be65e3](https://github.com/rosvik/dtls/commit/3be65e35ca638632a76025acad3673912b4b1602))
+
 ## [0.2.0](https://github.com/rosvik/dtls/compare/v0.1.0...v0.2.0) (2026-05-23)
 
 
